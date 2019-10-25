@@ -4,17 +4,34 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <parent>
-        <groupId>com.cedricwalter</groupId>
+        <groupId>com.github.JesusMcCloud</groupId>
         <artifactId>tor-binary</artifactId>
-        <version>7.0.6</version>
+        <version>0.4.1.6</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tor-binary-geoip</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-remote-resources-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <resourceBundles>
+                        <resourceBundle>com.github.JesusMcCloud:tor-binary-resources:${project.version}</resourceBundle>
+                    </resourceBundles>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>process</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>1.8</version>
@@ -27,59 +44,34 @@
                 </dependencies>
                 <executions>
                     <execution>
-                        <id>unpack-linux64</id>
+                        <id>unpack-geoip</id>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <tasks>
+                            <target>
                                 <taskdef resource="org/apache/ant/compress/antlib.xml"
                                          classpathref="maven.plugin.classpath"/>
 
-                                <get
-                                    src="https://www.torproject.org/dist/torbrowser/${torbrowser.version}/tor-browser-linux64-${torbrowser.version}_en-US.tar.xz"
-                                    dest="${project.build.directory}/tor-browser-linux64-${torbrowser.version}_en-US.tar.xz"
-                                    skipexisting="true"/>
-                                <get
-                                    src="https://www.torproject.org/dist/torbrowser/${torbrowser.version}/tor-browser-linux64-${torbrowser.version}_en-US.tar.xz.asc"
-                                    dest="${project.build.directory}/tor-browser-linux64-${torbrowser.version}_en-US.tar.xz.asc"
-                                    skipexisting="true"/>
-
-                                <exec executable="gpg" failonerror="true">
-                                    <arg
-                                        line="--auto-key-locate keyserver --keyserver pgp.mit.edu --keyserver-options auto-key-retrieve --verify ${project.build.directory}/tor-browser-linux64-${torbrowser.version}_en-US.tar.xz.asc ${project.build.directory}/tor-browser-linux64-${torbrowser.version}_en-US.tar.xz"></arg>
-                                </exec>
-
                                 <unxz
-                                    src="${project.build.directory}/tor-browser-linux64-${torbrowser.version}_en-US.tar.xz"
+                                    src="${project.remote-resource.directory}/tor-browser-linux64-${torbrowser.version}_en-US.tar.xz"
                                     dest="${project.build.directory}/linuxx64.tar"
 
                                 />
                                 <untar src="${project.build.directory}/linuxx64.tar"
-                                       dest="${project.build.directory}/linuxx64/"
-                                />
-                            </tasks>
+                                       dest="${project.basedir}/src/main/resources">
+                                    <patternset>
+                                        <include name="tor-browser_en-US/Browser/TorBrowser/Data/Tor/geoip"/>
+                                        <include name="tor-browser_en-US/Browser/TorBrowser/Data/Tor/geoip6"/>
+                                    </patternset>
+                                    <mapper type="flatten"/>
+                                </untar>
+                                <delete dir="${project.remote-resource.directory}" />
+
+                                <chmod dir="${project.basedir}/src/main/resources" perm="+x" includes="*"/>
+                            </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>move</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/main/assembly/geoip.xml</descriptor>
-                            </descriptors>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -90,10 +82,7 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>1.8</version>
                 </plugin>
-
             </plugins>
         </pluginManagement>
-
-
     </build>
 </project>

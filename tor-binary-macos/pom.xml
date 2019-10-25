@@ -4,87 +4,77 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <parent>
-        <groupId>com.cedricwalter</groupId>
+        <groupId>com.github.JesusMcCloud</groupId>
         <artifactId>tor-binary</artifactId>
-        <version>7.0.6</version>
+        <version>0.4.1.6</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>tor-binary-macos</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-remote-resources-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <resourceBundles>
+                        <resourceBundle>com.github.JesusMcCloud:tor-binary-resources:${project.version}</resourceBundle>
+                    </resourceBundles>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>process</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>1.8</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.ant</groupId>
-                        <artifactId>ant-compress</artifactId>
-                        <version>1.4</version>
-                    </dependency>
-                </dependencies>
                 <executions>
                     <execution>
                         <id>unpack-osx</id>
                         <phase>generate-resources</phase>
                         <configuration>
                             <target>
-                                <taskdef resource="org/apache/ant/compress/antlib.xml"
-                                         classpathref="maven.plugin.classpath"/>
+                                <property name="7z_executable" value="${project.remote-resource.directory}/p7zip/7z" />
+                                <chmod dir="${7z_executable}/.." perm="+x" includes="**/*"/>
 
-                                <get
-                                    src="https://www.torproject.org/dist/torbrowser/${torbrowser.version}/TorBrowser-${torbrowser.version}-osx64_en-US.dmg"
-                                    dest="${project.build.directory}/TorBrowser-${torbrowser.version}-osx64_en-US.dmg"
-                                    skipexisting="true"/>
-                                <get
-                                    src="https://www.torproject.org/dist/torbrowser/${torbrowser.version}/TorBrowser-${torbrowser.version}-osx64_en-US.dmg.asc"
-                                    dest="${project.build.directory}/TorBrowser-${torbrowser.version}-osx64_en-US.dmg.asc"
-                                    skipexisting="true"/>
+                                <property environment="env" />
+                                <available file="7z" filepath="${env.PATH}" property="7z_executable" value="7z"/>
 
-                                <exec executable="gpg" failonerror="true">
-                                    <arg
-                                        line="--auto-key-locate keyserver --keyserver pgp.mit.edu --keyserver-options auto-key-retrieve --verify ${project.build.directory}/TorBrowser-${torbrowser.version}-osx64_en-US.dmg.asc ${project.build.directory}/TorBrowser-${torbrowser.version}-osx64_en-US.dmg"></arg>
-                                </exec>
+                                <delete dir="${project.build.directory}/osx" failonerror="false" />
 
                                 <!-- unpack Tor
-                                             x unpack
-                                             -o destination folder
-                                             -aoa Overwrite all existing files without prompt.
-                                             -->
-                                <exec executable="7z" failonerror="true">
+                                x unpack
+                                -o destination folder
+                                -aoa Overwrite all existing files without prompt.
+                                -->
+                                <exec executable="${7z_executable}" failonerror="true">
                                     <arg
-                                        line="x ${project.build.directory}/TorBrowser-${torbrowser.version}-osx64_en-US.dmg -o${project.build.directory}/osx -aoa TorBrowser.app/Contents/MacOS/Tor/*"></arg>
+                                        line="x ${project.remote-resource.directory}/TorBrowser-${torbrowser.version}-osx64_en-US.dmg -o${project.build.directory}/osx -aoa *"></arg>
+                                </exec>
+
+                                <!-- tor 8 changed the directory structure of its osx binaries... -->
+                                <property name="path" value="${project.build.directory}/osx/Tor Browser.app/Contents/MacOS/Tor/"/>
+                                <!-- in case we want tor pre version 8, check for directory structure and set appropriate path -->
+                                <available file="${project.build.directory}/osx/TorBrowser.app" type="dir" property="path" value="${project.build.directory}/osx/TorBrowser.app/Contents/MacOS/Tor/"/>
+
+                                <delete dir="${project.basedir}/src/" failonerror="false" />
+                                <delete dir="${project.remote-resource.directory}" />
+                                <mkdir dir="${project.basedir}/src/main/resources/native/osx/x64/"/>
+                                <exec executable="tar" dir="${path}" failonerror="true">
+                                    <arg line="-cJvf ${project.basedir}/src/main/resources/native/osx/x64/tor.tar.xz ."/>
                                 </exec>
                             </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>package-osx</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>src/main/assembly/macos.xml</descriptor>
-                            </descriptors>
-                            <attach>false
-                            </attach> <!-- don't attach because we override final name and that would not being unique in repository -->
-                            <finalName>tor</finalName>
-                            <appendAssemblyId>true</appendAssemblyId>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -95,10 +85,7 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>1.8</version>
                 </plugin>
-
             </plugins>
         </pluginManagement>
-
-
     </build>
 </project>

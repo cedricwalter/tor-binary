@@ -1,22 +1,37 @@
 # Tor Binary files
 
-Package Tor files from [Tor Browser project](https://github.com/TheTorProject/gettorbrowser) in a way that can use by any java projects
-
-
+Package native Tor files from [Tor Browser project](https://www.torproject.org/) in a way that can be uses by java projects.
 
 # Install
 
-require GPG and 7Zip installed
-
-```apt-get install -y p7zip-full```
+require GPG installed
 
 Change in pom to get the desired version
 
-```<torbrowser.version>7.0.6</torbrowser.version>```
+```<torbrowser.version>your TorBrowserBundle version here</torbrowser.version>```
 
 run ```maven install```
 
-This project verify GPG signature, unpack Tor Browser and package TOR binary for each platform.
+alternatively, you can source jitpack.io:
+
+Maven:
+```
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        ...
+    </repositories>
+```
+
+Gradle:
+```
+    repositories {
+        maven { url 'https://jitpack.io' }
+        ...
+    }
+```
 
 
 # Usage
@@ -25,37 +40,37 @@ Tor binary are simple zip files:
 
 ```
 <dependency>
-    <groupId>com.cedricwalter</groupId>
+    <groupId>com.github.JesusMcCloud.tor-binary</groupId>
     <artifactId>tor-binary-linux32</artifactId>
-    <version>7.0.6</version>
-    <type>zip</type>
+    <version>${torbrowser.version}</version>
+    <type>tar.xz</type>
     <classifier>bin</classifier>
 </dependency>
 ```
 ```
 <dependency>
-    <groupId>com.cedricwalter</groupId>
+    <groupId>com.github.JesusMcCloud.tor-binary</groupId>
     <artifactId>tor-binary-linux64</artifactId>
-    <version>7.0.6</version>
-    <type>zip</type>
+    <version>${torbrowser.version}</version>
+    <type>tar.xz</type>
     <classifier>bin</classifier>
 </dependency>
 ```
 ```
 <dependency>
-    <groupId>com.cedricwalter</groupId>
+    <groupId>com.github.JesusMcCloud.tor-binary</groupId>
     <artifactId>tor-binary-macos</artifactId>
-    <version>7.0.6</version>
-    <type>zip</type>
+    <version>${torbrowser.version}</version>
+    <type>tar.xz</type>
     <classifier>bin</classifier>
 </dependency>
 ```
 ```
 <dependency>
-    <groupId>com.cedricwalter</groupId>
+    <groupId>com.github.JesusMcCloud.tor-binary</groupId>
     <artifactId>tor-binary-windows</artifactId>
-    <version>7.0.6</version>
-    <type>zip</type>
+    <version>${torbrowser.version}</version>
+    <type>tar.xz</type>
     <classifier>bin</classifier>
 </dependency>
 ```
@@ -68,7 +83,7 @@ you may want to unpack these dependencies if required using
     <executions>
         <execution>
             <id>copy</id>
-            <phase>package</phase>
+            <phase>generate-resources</phase>
             <goals>
                 <goal>copy</goal>
             </goals>
@@ -77,14 +92,17 @@ you may want to unpack these dependencies if required using
                     <artifactItem>
                         <groupId>com.cedricwalter</groupId>
                         <artifactId>tor-binary-linux32</artifactId>
-                        <version>${tor-binary.version}</version>
-                        <type>zip</type>
+                        <version>${torbrowser.version}</version>
+                        <type>tar.xz</type>
                         <classifier>bin</classifier>
                         <overWrite>false</overWrite>
                         <outputDirectory>${project.build.directory}/classes/native/linux/x86
                         </outputDirectory>
-                        <destFileName>tor.zip</destFileName>
+                        <destFileName>tor.tar.xz</destFileName>
                     </artifactItem>
                  </artifactItems>
             </configuration>
+        </execution>
+    </executions>
+</plugin>
 ```
